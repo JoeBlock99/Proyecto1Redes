@@ -70,7 +70,19 @@ class Client(slixmpp.ClientXMPP):
         else:
             self.menu()
     def status(self, status):
-        
+        print("""------------Options------------\n
+                1. Available
+                2. Not available
+                3. Do not disturb""")
+        option = int(input("Selected number: "))
+        if(option == 1):
+            self.send_presence(pshow="Available", pstatus=status)
+        elif(option == 2):
+            self.send_presence(pshow="Not available", pstatus=status)
+        elif(option == 3):
+            self.send_presence(pshow="Do not disturb", pstatus=status)
+        else:
+            self.status()
 
 
     async def register(self,iq):
