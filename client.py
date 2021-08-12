@@ -1,14 +1,6 @@
-#!/usr/bin/env python3
-
-# Slixmpp: The Slick XMPP Library
-# Copyright (C) 2010  Nathanael C. Fritz
-# This file is part of Slixmpp.
-# See the file LICENSE for copying permission.
-
 import logging
 from getpass import getpass
 from argparse import ArgumentParser
-
 import slixmpp
 
 
@@ -32,57 +24,62 @@ class Client(slixmpp.ClientXMPP):
        
         self.send_presence()
         await self.get_roster()
-
-        self.menu()
-
-    def menu(self):
-        print("""=============================BIENVENID@=============================\n\n\n 
-                    Menu:\n
-                    1. Send message\n
-                    2. Send file\n
-                    3. Send group message\n
-                    4. Add to contacts\n
-                    5. User detail\n 
-                    6. List Users\n
-                    7. Status update\n
-                    8. Log-out\n
-                    9. Delete user\n
-                    """)                   
-        menu = int(input("Selected number: "))
-        if(menu == 1):
-            self.sendMessage()
-        elif(menu == 2):
-            pass
-        elif(menu == 3):
-            pass
-        elif(menu == 4):
-            self.addContact()
-        elif(menu == 5):
-            pass
-        elif(menu == 6):
-            pass
-        elif(menu == 7):
-            self.status()
-        elif(menu == 8):
-            self.logOut()
-        elif(menu == 9):
-            self.deleteUser()
-        else:
-            self.menu()
-    def status(self, status):
+        showMenu = True
+        while(showMenu):
+            print("""=============================BIENVENID@=============================\n\n\n 
+                        Menu:\n
+                        1. Send message\n
+                        2. Send file\n
+                        3. Send group message\n
+                        4. Add to contacts\n
+                        5. User detail\n 
+                        6. List Users\n
+                        7. Status update\n
+                        8. Log-out\n
+                        9. Delete user\n
+                        """)                   
+            menu = int(input("Selected number: "))
+            if(menu == 1):
+                to = input("Username: ")
+                to = to +"@alumchat.xyz"
+                self.sendNotification(to)
+                self.sendMessage(to)
+            elif(menu == 2):
+                pass
+            elif(menu == 3):
+                pass
+            elif(menu == 4):
+                self.addContact()
+            elif(menu == 5):
+                pass
+            elif(menu == 6):
+                await self.listUsers()
+            elif(menu == 7):
+                self.status()
+            elif(menu == 8):
+                self.logOut()
+                showMenu = False
+            elif(menu == 9):
+                self.deleteUser()
+                showMenu = False
+            await self.get_roster()
+            
+        
+    def status(self):
         print("""------------Options------------\n
                 1. Available
                 2. Not available
                 3. Do not disturb""")
         option = int(input("Selected number: "))
         if(option == 1):
-            self.send_presence(pshow="Available", pstatus=status)
+            self.send_presence(pshow="chat", pstatus="Available")
         elif(option == 2):
-            self.send_presence(pshow="Not available", pstatus=status)
+            self.send_presence(pshow="away", pstatus="Not available")
         elif(option == 3):
-            self.send_presence(pshow="Do not disturb", pstatus=status)
+            self.send_presence(pshow="dnd", pstatus="Do not disturb")
         else:
             self.status()
+        
 
 
     async def register(self,iq):
@@ -93,21 +90,64 @@ class Client(slixmpp.ClientXMPP):
         await resp.send()
         logging.info("Account created for %s!" % self.boundjid)    
 
-    def sendMessage(self):
-        to = input("To: ")
+    def sendNotification(self, to):
+        notification = self.Message()
+        notification["chat_state"] = "composing"
+        notification["to"] = to
+        notification.send()
+
+
+    def sendMessage(self,to):
         message = input("Message: ")
-        self.send_message(mto=to+"@alumchat.xyz",
+        self.send_message(mto=to,
                           mbody=message,
                           mtype='chat')
-        self.menu()
+        
+    
 
     def addContact(self):
         newContact = input("Contact username: ")
-        self.send_presence_subscription(pto=newContact+"@alumchat.xyz")
+        newContact = newContact+"@alumchat.xyz"
+        self.send_presence_subscription(pto=newContact)
         self.send_message(mto=newContact, mbody="Hola", mtype="chat", mfrom=self.boundjid.bare)
+        
     
     def logOut(self):
         self.disconnect()
+        
+    
+    async def listUsers(self):
+        self.send_presence()
+        await self.get_roster()
+
+        print('Roster for %s' % self.boundjid.bare)
+        groups = self.client_roster.groups()
+        for group in groups:
+            print('\n%s' % group)
+            print('-' * 72)
+            for jid in groups[group]:
+                name = self.client_roster[jid]['name']
+                if self.client_roster[jid]['name']:
+                    print(' %s (%s)' % (name, jid))
+                else:
+                    print('\n',jid)
+
+                connections = self.client_roster.presence(jid)
+                for res, pres in connections.items():
+                    show = 'available'
+                    if pres['show']:
+                        show = pres['show']
+                    print('   - %s (%s)' % (res, show))
+                    if pres['status']:
+                        print('       %s' % pres['status'])
+
+
+    def wait_for_presences(self, pres):
+        self.received.add(pres['from'].bare)
+        if len(self.received) >= len(self.client_roster.keys()):
+            self.presences_received.set()
+        else:
+            self.presences_received.clear()
     
     def deleteUser(self):
         self.register_plugin("xep_0030")
@@ -141,6 +181,7 @@ if __name__ == '__main__':
         xmpp.register_plugin('xep_0004') # Data forms
         xmpp.register_plugin('xep_0066') # Out-of-band Data
         xmpp.register_plugin('xep_0077')
+        xmpp.register_plugin('xep_0085')
         xmpp['xep_0077'].force_registration = True
         xmpp.connect()
         xmpp.process()
@@ -150,6 +191,7 @@ if __name__ == '__main__':
         xmpp = Client(user+"@alumchat.xyz", password)
         xmpp.register_plugin('xep_0030') # Service Discovery
         xmpp.register_plugin('xep_0199') # XMPP Ping
+        xmpp.register_plugin('xep_0085')
         xmpp.connect()
         xmpp.process(forever=False)
     elif(opcion == 3):
