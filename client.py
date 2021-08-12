@@ -51,9 +51,9 @@ class Client(slixmpp.ClientXMPP):
             elif(menu == 4):
                 self.addContact()
             elif(menu == 5):
-                pass
+                self.userDetail()
             elif(menu == 6):
-                await self.listUsers()
+                self.listUsers()
             elif(menu == 7):
                 self.status()
             elif(menu == 8):
@@ -103,7 +103,17 @@ class Client(slixmpp.ClientXMPP):
                           mbody=message,
                           mtype='chat')
         
-    
+    def userDetail(self):
+        detail = input("Username: ")
+        usrDet = self.client_roster[detail]# nombre: que nadie usa
+        state = self.client_roster.presence(detail)
+        for res, pres in state.items():
+            show = 'available'
+            if pres['show']:
+                show = pres['show']
+            print('   - %s (%s)' % (res, show))
+            if pres['status']:
+                print('       %s(%s)' % (detail,pres['status']))
 
     def addContact(self):
         newContact = input("Contact username: ")
@@ -116,10 +126,7 @@ class Client(slixmpp.ClientXMPP):
         self.disconnect()
         
     
-    async def listUsers(self):
-        self.send_presence()
-        await self.get_roster()
-
+    def listUsers(self):
         print('Roster for %s' % self.boundjid.bare)
         groups = self.client_roster.groups()
         for group in groups:
