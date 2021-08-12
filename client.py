@@ -90,7 +90,10 @@ class Client(slixmpp.ClientXMPP):
         self.menu()
 
     def addContact(self):
-        
+        newContact = input("Contact username: ")
+        self.send_presence_subscription(pto=newContact+"@alumchat.xyz")
+        self.send_message(mto=newContact, mbody="Hola", mtype="chat", mfrom=self.boundjid.bare)
+    
     def logOut(self):
         self.disconnect()
     
