@@ -45,7 +45,7 @@ class Client(slixmpp.ClientXMPP):
                 self.sendNotification(to)
                 self.sendMessage(to)
             elif(menu == 2):
-                self.sendFile()
+                await self.sendFile()
             elif(menu == 3):
                 self.groupChat()
             elif(menu == 4):
@@ -139,6 +139,21 @@ class Client(slixmpp.ClientXMPP):
     def logOut(self):
         self.disconnect()
         
+    async def sendFile(self):
+        recipient = input("Recipient: ")
+        recipient = recipient+"@alumchat.xyz"
+
+        filename = input("File: ")
+
+        logging.info('Uploading file %s...', filename)
+        url = await self['xep_0363'].upload_file(filename, domain=None, timeout=10)
+
+        logging.info('Upload success!')
+        logging.info('Sending file to %s', recipient)
+
+        message = self.make_message(mto=recipient, mbody=url)
+        message.send()
+
     
     def listUsers(self):
         print('Roster for %s' % self.boundjid.bare)
@@ -206,6 +221,7 @@ if __name__ == '__main__':
         xmpp.register_plugin('xep_0030') # Service Discovery
         xmpp.register_plugin('xep_0199') # XMPP Ping
         xmpp.register_plugin('xep_0085')
+        xmpp.register_plugin('xep_0363')
         xmpp.connect()
         xmpp.process(forever=False)
     elif(opcion == 3):
