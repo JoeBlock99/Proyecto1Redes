@@ -17,13 +17,13 @@ class Client(slixmpp.ClientXMPP):
         self.user = user
         self.password = password
         
-        self.add_event_handler("session_start", self.start)
-        self.add_event_handler("register", self.register)
+        self.add_event_handler("session_start", self.start)#es como una flag de que se inicio sesion
+        self.add_event_handler("register", self.register)#flag de register
         
     async def start(self, event):
        
-        self.send_presence()
-        await self.get_roster()
+        self.send_presence()# manda nuestra informacion
+        await self.get_roster() # recive la informacion que hay en el server relacionada a nosotros
         showMenu = True
         while(showMenu):
             print("""=============================BIENVENID@=============================\n\n\n 
@@ -45,9 +45,9 @@ class Client(slixmpp.ClientXMPP):
                 self.sendNotification(to)
                 self.sendMessage(to)
             elif(menu == 2):
-                pass
+                self.sendFile()
             elif(menu == 3):
-                pass
+                self.groupChat()
             elif(menu == 4):
                 self.addContact()
             elif(menu == 5):
@@ -80,7 +80,16 @@ class Client(slixmpp.ClientXMPP):
         else:
             self.status()
         
+    def groupChat(self):
+        self.register_plugin('xep_0030')
+        self.register_plugin('xep_0045')
+        self.register_plugin('xep_0199')
 
+        room = input("Group name: ")
+        nickname = input("Nickname: ")
+        message = input('Message: ')
+        self.plugin['xep_0045'].join_muc(room+"@conference.alumchat.xyz", nickname)
+        self.send_message(mto=room+"@conference.alumchat.xyz", mbody=message, mtype='groupchat')
 
     async def register(self,iq):
         resp = self.Iq()
@@ -90,13 +99,14 @@ class Client(slixmpp.ClientXMPP):
         await resp.send()
         logging.info("Account created for %s!" % self.boundjid)    
 
+    # En el momento en el que se manda el mensaje se activa esta notificacion
     def sendNotification(self, to):
         notification = self.Message()
         notification["chat_state"] = "composing"
         notification["to"] = to
         notification.send()
 
-
+    # 1 to 1 message
     def sendMessage(self,to):
         message = input("Message: ")
         self.send_message(mto=to,
@@ -104,9 +114,12 @@ class Client(slixmpp.ClientXMPP):
                           mtype='chat')
         
     def userDetail(self):
+        self.get_roster()
         detail = input("Username: ")
-        usrDet = self.client_roster[detail]# nombre: que nadie usa
+        detail = detail+"@alumchat.xyz"
+        usrDet = self.client_roster[detail]# users name that no one is using
         state = self.client_roster.presence(detail)
+        print('-' * 72)
         for res, pres in state.items():
             show = 'available'
             if pres['show']:
@@ -114,6 +127,7 @@ class Client(slixmpp.ClientXMPP):
             print('   - %s (%s)' % (res, show))
             if pres['status']:
                 print('       %s(%s)' % (detail,pres['status']))
+                print('-' * 72)
 
     def addContact(self):
         newContact = input("Contact username: ")
@@ -147,15 +161,8 @@ class Client(slixmpp.ClientXMPP):
                     print('   - %s (%s)' % (res, show))
                     if pres['status']:
                         print('       %s' % pres['status'])
-
-
-    def wait_for_presences(self, pres):
-        self.received.add(pres['from'].bare)
-        if len(self.received) >= len(self.client_roster.keys()):
-            self.presences_received.set()
-        else:
-            self.presences_received.clear()
-    
+                        print('-' * 72)
+    #delete logged user
     def deleteUser(self):
         self.register_plugin("xep_0030")
         self.register_plugin("xep_0004")
