@@ -16,6 +16,13 @@ pip install slixmpp
 
 https://pypi.org/project/slixmpp/
 
+Install aiohttp
+---------------
+
+pip install aiohttp
+
+Check python version if couldnt install.
+
 
 RUN Program
 -----------
