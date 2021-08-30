@@ -1,0 +1,37 @@
+[
+    {
+        "name": "A",
+        "adyacents": {
+            "B": 1,
+            "C": 5
+        }
+    },
+    {
+        "name": "B",
+        "adyacents": {
+            "A": 1,
+            "C": 3
+        }
+    },
+    {
+        "name": "C",
+        "adyacents": {
+            "A": 5,
+            "B": 3,
+            "D": 4
+        }
+    },
+    {
+        "name": "D",
+        "adyacents": {
+            "E": 2,
+            "C": 4
+        }
+    },
+    {
+        "name": "E",
+        "adyacents": {
+            "D": 2
+        }
+    }
+]
