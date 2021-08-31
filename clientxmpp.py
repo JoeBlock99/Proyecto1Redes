@@ -32,6 +32,7 @@ class Client(slixmpp.ClientXMPP):
 
         self.password = password
         self.started = 0
+        self.inited = False
         # self.add_event_handler("presence_subscribe", self.presence_subscribed)
         self.add_event_handler("session_start", self.start)
         self.add_event_handler("register", self.register)  # flag de register
@@ -73,6 +74,7 @@ class Client(slixmpp.ClientXMPP):
         return self.recipents[recipent_index]
 
     def message(self, msg):
+        print("\n")
         if msg['type'] in ('chat'):
             message_json = json.loads(msg["body"])
             if "to" in message_json:
@@ -80,7 +82,8 @@ class Client(slixmpp.ClientXMPP):
                     print("Se recibe mensaje de: ", message_json["from"])
                     print(message_json["message"])
                 else:
-                    destinatary = nextNode(self.d_user, message_json["to"]) # self.node.get_next_node(message_json["to"])
+                    # self.node.get_next_node(message_json["to"])
+                    destinatary = nextNode(self.d_user, message_json["to"])
                     if destinatary is None:
                         destinatary = message_json["to"]
 
@@ -88,7 +91,8 @@ class Client(slixmpp.ClientXMPP):
                         message_json["to"] + " esta pasando por " + \
                         self.d_user + " y se dirige hacia " + destinatary
                     print(message)
-                    self.make_message(mto=self.compute_username(message_json["from"]).lower(), mbody=json.dumps({"message": message}), mtype="chat").send()
+                    self.make_message(mto=self.compute_username(message_json["from"]).lower(
+                    ), mbody=json.dumps({"message": message}), mtype="chat").send()
 
                     self.make_message(mto=self.compute_username(destinatary).lower(),
                                       mbody=msg["body"],
@@ -99,6 +103,7 @@ class Client(slixmpp.ClientXMPP):
         self.get_roster()
 
     async def start(self, event):
+        self.inited = True
         self.send_presence()
         print("conectado")
         while True:
