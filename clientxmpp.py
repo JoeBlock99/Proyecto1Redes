@@ -37,14 +37,6 @@ class Client(slixmpp.ClientXMPP):
         self.add_event_handler("session_start", self.start)
         self.add_event_handler("register", self.register)  # flag de register
         self.add_event_handler('message', self.message)
-        self.register_plugin('xep_0004')  # Data forms
-        self.register_plugin('xep_0066')  # Out-of-band Data
-        self.register_plugin('xep_0077')
-        self.register_plugin('xep_0030')  # Service Discovery
-        self.register_plugin('xep_0199')  # XMPP Ping
-        self.register_plugin('xep_0092')
-        self.register_plugin('xep_0363')
-        self.register_plugin('xep_0085')
         # self.send_tables()
 
     @property

@@ -43,7 +43,7 @@ if __name__ == '__main__':
         xmpp.connect()
 
     tt = Thread(
-        target=xmpp_thread, args=(xmpp, lambda: xmpp.started == -1))
+        target=xmpp_thread, args=(xmpp, lambda: xmpp.started == -1), daemon=True)
     tt.start()
     print("Esperando respuesta del servidor...")
     sleep(XMPP_TIMEOUT)
