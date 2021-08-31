@@ -70,23 +70,24 @@ class Client(slixmpp.ClientXMPP):
             if "to" in message_json:
                 if message_json["to"] == self.d_user:
                     print("\n")
-                    print("Se recibe mensaje de: ", message_json["from"])
-                    print(message_json["message"], "\n")
+                    print("Se recibe mensaje de: ",
+                          message_json["from"], " que vino a traves de ", msg["from"])
+                    print(message_json["message"])
                 else:
-                    print("Soy: ", self.boundjid.bare)
                     message_json["counter"] = message_json["counter"] - 1
                     if message_json["counter"] > 0:
                         for adyacent in self.node.adyacents:
-                            print("Envaindo a : ", adyacent["node"])
-                            to = self.node.compute_username(
-                                adyacent["node"]).lower()
-                            serialized_payload = json.dumps(message_json)
-                            self.make_message(
-                                mto=to,
-                                mbody=serialized_payload,
-                                mtype='chat',
-                                mfrom=self.boundjid.bare
-                            ).send()
+                            if adyacent not in msg["from"]:
+                                print("Envaindo a : ", adyacent["node"])
+                                to = self.node.compute_username(
+                                    adyacent["node"]).lower()
+                                serialized_payload = json.dumps(message_json)
+                                self.make_message(
+                                    mto=to,
+                                    mbody=serialized_payload,
+                                    mtype='chat',
+                                    mfrom=self.boundjid.bare
+                                ).send()
 
             else:
                 print("\n")
