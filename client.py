@@ -2,6 +2,7 @@ import logging
 from getpass import getpass
 from argparse import ArgumentParser
 import slixmpp
+import json
 
 
 class Client(slixmpp.ClientXMPP):
@@ -63,8 +64,7 @@ class Client(slixmpp.ClientXMPP):
                 self.deleteUser()
                 showMenu = False
             await self.get_roster()
-            
-        
+             
     def status(self):
         print("""------------Options------------\n
                 1. Available
@@ -112,7 +112,18 @@ class Client(slixmpp.ClientXMPP):
         self.send_message(mto=to,
                           mbody=message,
                           mtype='chat')
-        
+
+    def readNodes(userId):
+        jsonOpened = open('nodes_demo.json',)
+        data = json.load(jsonOpened)
+
+        for i in data:
+            if i.name == userId:
+                adyacentUsers = i.adyacents
+        return adyacentUsers
+
+
+
     def userDetail(self):
         self.get_roster()
         detail = input("Username: ")

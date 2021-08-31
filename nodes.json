@@ -1,0 +1,23 @@
+[
+    {
+        "name": "user1",
+        "adyacents": {
+            "user2": 1,
+            "user3": 5
+        }
+    },
+    {
+        "name": "user2",
+        "adyacents": {
+            "user1": 1,
+            "user3": 3
+        }
+    },
+    {
+        "name": "user3",
+        "adyacents": {
+            "user1": 5,
+            "user2": 3
+        }
+    }
+]
