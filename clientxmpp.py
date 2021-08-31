@@ -79,7 +79,7 @@ class Client(slixmpp.ClientXMPP):
                     if destinatary is None:
                         destinatary = message_json["to"]
 
-                    message = "El mensaje que esta pensado llegar a: " + \
+                    message = "\nEl mensaje que esta pensado llegar a: " + \
                         message_json["to"] + " esta pasando por " + \
                         self.d_user + " y se dirige hacia " + destinatary
                     print(message)
