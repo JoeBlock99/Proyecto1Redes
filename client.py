@@ -1,5 +1,6 @@
+from time import sleep
 from clientxmpp import Client
-from constants import XMPP_DOMAIN
+from constants import XMPP_DOMAIN, XMPP_TIMEOUT
 from node import Node, build_prod_nodes
 from helpers import index_of_list, required_input
 import logging
@@ -11,7 +12,9 @@ from threading import Thread
 
 def xmpp_thread(xmpp, computed_stop):
     try:
-        xmpp.process(forever=True)
+        # logging.basicConfig(level=logging.DEBUG,
+        #                     format='%(levelname)-8s % ( message)s')
+        xmpp.process(forever=False, timeout=XMPP_TIMEOUT)
     except:
         print("Solo perdidas")
         xmpp.disconnect()
@@ -19,8 +22,7 @@ def xmpp_thread(xmpp, computed_stop):
 
 if __name__ == '__main__':
     # Setup logging.
-    # logging.basicConfig(level=logging.INFO,
-    #                     format='%(levelname)-8s %(message)s')
+
     options = ["Resgistrarse", "Login", "Salir"]
     _nodes = build_prod_nodes()
     nodes_dict = {}
@@ -47,11 +49,20 @@ if __name__ == '__main__':
         xmpp.register_plugin('xep_0363')
         xmpp.register_plugin('xep_0085')
         xmpp.connect()
-
+    # logging.basicConfig(level=logging.DEBUG,
+    #                     format='%(levelname)-8s %(message)s')
     tt = Thread(
-        target=xmpp_thread, args=(xmpp, lambda: xmpp.started == -1))
+        target=xmpp_thread, args=(xmpp, lambda: xmpp.started == -1), daemon=True)
     tt.start()
-    _ = input("Presione cualquier tecla para empezar a calcular tablas: \n")
+
+    print("Esperando respuesta del servidor...")
+    sleep(XMPP_TIMEOUT)
+    if(not xmpp.inited or xmpp.started == -1):
+        print("No se pudo conectar al server")
+        xmpp.disconnect(wait=True)
+        exit(0)
+
+    _ = input("Presione enter tecla para empezar a calcular tablas: \n")
     xmpp.send_tables()
     xmpp.send_presence_subscriptions()
     options = ["Mandar mensaje", "Salir"]
@@ -68,12 +79,12 @@ if __name__ == '__main__':
                 "from": xmpp.d_user
             }
             destinatary = xmpp.node.get_next_node(recipent)
-            print("Enviando mensaje a ", destinatary)
+
             if destinatary is None:
                 destinatary = to
             else:
                 destinatary = xmpp.node.compute_username(destinatary)
-
+            print("Enviando mensaje a ", destinatary)
             xmpp.make_message(mto=destinatary,
                               mbody=json.dumps(message_json),
                               mtype='chat').send()
@@ -81,5 +92,4 @@ if __name__ == '__main__':
             xmpp.logOut()
             showMenu = False
 
-
-sys.exit(0)
+exit(0)

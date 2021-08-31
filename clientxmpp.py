@@ -30,11 +30,11 @@ class Client(slixmpp.ClientXMPP):
             self.d_user = user[:p]
         else:
             self.d_user = user
-
+        self.inited = False
         self.node = self.nodes_dict[self.d_user]
         self.password = password
         self.started = 0
-        # self.add_event_handler("presence_subscribe", self.presence_subscribed)
+        self.add_event_handler("presence_subscribe", self.presence_subscribed)
         self.add_event_handler("session_start", self.start)
         self.add_event_handler("register", self.register)  # flag de register
         self.add_event_handler('message', self.message)
@@ -49,6 +49,7 @@ class Client(slixmpp.ClientXMPP):
         return recipents_array
 
     def presence_subscribed(self, new_presence):
+
         item = self.roster[new_presence['to']][new_presence['from']]
         item.authorize()
         item.subscribe()
@@ -69,6 +70,7 @@ class Client(slixmpp.ClientXMPP):
             message_json = json.loads(msg["body"])
             if "to" in message_json:
                 if message_json["to"] == self.d_user:
+                    print("\n")
                     print("Se recibe mensaje de: ", message_json["from"])
                     print(message_json["message"])
                 else:
@@ -86,6 +88,7 @@ class Client(slixmpp.ClientXMPP):
                                       mbody=msg["body"],
                                       mtype='chat').send()
             else:
+                print("\n")
                 print("Imprimamos", message_json["message"])
 
         elif msg["type"] == "normal":
@@ -123,16 +126,18 @@ class Client(slixmpp.ClientXMPP):
                 # await self.waiting_queue.join()
             all_valid = self.node.is_ready and all_valid_holder
             time.sleep(3)
-            # print(self.node.table)
+            print(self.node.table)
             self.node.counter += 1
 
     def send_presence_subscriptions(self):
         for node in self.nodes_dict:
             self.send_presence_subscription(
-                pto=node, pfrom=self.user)
+                pto=self.node.compute_username(node), pfrom=self.user)
 
     async def start(self, event):
+        self.inited = True
         self.send_presence()
+        print("Conectado")
         while True:
             try:
                 # Ask for roster
@@ -141,6 +146,7 @@ class Client(slixmpp.ClientXMPP):
             except:
                 self.started = -1
                 self.disconnect()
+                print("todo mal")
             # await self.get_roster()
 
     async def register(self, iq):
@@ -160,10 +166,6 @@ class Client(slixmpp.ClientXMPP):
                           mfrom=self.boundjid.bare
                           ).send()
 
-    # 1 to 1 message
-
-    # def sendMessage(self, to, r):
-
-    def logOut(self):
+    async def logOut(self):
         self.started = -1
         self.disconnect(wait=True)

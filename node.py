@@ -31,7 +31,7 @@ class Node:
 
     @property
     def is_ready(self):
-        return not self.table_contains_none and self.counter >= 10
+        return not self.table_contains_none and self.counter >= 4
 
     def compute_username(self, name):
         return name.lower() + "@" + XMPP_DOMAIN
