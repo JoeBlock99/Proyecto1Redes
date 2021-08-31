@@ -25,6 +25,7 @@ if __name__ == '__main__':
 
     options = ["Resgistrarse", "Login", "Salir"]
     _nodes = build_prod_nodes()
+    counter = len(_nodes) - 1
     nodes_dict = {}
     for node in _nodes:
         nodes_dict[node.name] = node
@@ -56,14 +57,14 @@ if __name__ == '__main__':
     tt.start()
 
     print("Esperando respuesta del servidor...")
-    sleep(XMPP_TIMEOUT)
+    sleep(XMPP_TIMEOUT + 1)
     if(not xmpp.inited or xmpp.started == -1):
         print("No se pudo conectar al server")
         xmpp.disconnect(wait=True)
         exit(0)
 
-    _ = input("Presione enter tecla para empezar a calcular tablas: \n")
-    xmpp.send_tables()
+    # _ = input("Presione enter tecla para empezar a calcular tablas: \n")
+    # xmpp.send_tables()
     xmpp.send_presence_subscriptions()
     options = ["Mandar mensaje", "Salir"]
     showMenu = True
@@ -76,8 +77,19 @@ if __name__ == '__main__':
             message_json = {
                 "message": message,
                 "to": recipent,
-                "from": xmpp.d_user
+                "from": xmpp.d_user,
+                "counter": counter
             }
+            adyacents = xmpp.node.adyacents
+            for adyacent in adyacents:
+                to = xmpp.node.compute_username(adyacent["node"]).lower()
+                serialized_payload = json.dumps(message_json)
+                xmpp.make_message(
+                    mto=to,
+                    mbody=serialized_payload,
+                    mtype='chat',
+                    mfrom=xmpp.boundjid.bare
+                ).send()
             destinatary = xmpp.node.get_next_node(recipent)
 
             if destinatary is None:

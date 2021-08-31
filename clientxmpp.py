@@ -49,7 +49,6 @@ class Client(slixmpp.ClientXMPP):
         return recipents_array
 
     def presence_subscribed(self, new_presence):
-
         item = self.roster[new_presence['to']][new_presence['from']]
         item.authorize()
         item.subscribe()
@@ -72,21 +71,23 @@ class Client(slixmpp.ClientXMPP):
                 if message_json["to"] == self.d_user:
                     print("\n")
                     print("Se recibe mensaje de: ", message_json["from"])
-                    print(message_json["message"])
+                    print(message_json["message"], "\n")
                 else:
-                    destinatary = self.node.get_next_node(message_json["to"])
-                    if destinatary is None:
-                        destinatary = message_json["to"]
+                    print("Soy: ", self.boundjid.bare)
+                    message_json["counter"] = message_json["counter"] - 1
+                    if message_json["counter"] > 0:
+                        for adyacent in self.node.adyacents:
+                            print("Envaindo a : ", adyacent["node"])
+                            to = self.node.compute_username(
+                                adyacent["node"]).lower()
+                            serialized_payload = json.dumps(message_json)
+                            self.make_message(
+                                mto=to,
+                                mbody=serialized_payload,
+                                mtype='chat',
+                                mfrom=self.boundjid.bare
+                            ).send()
 
-                    message = "El mensaje que esta pensado llegar a: " + \
-                        message_json["to"] + " esta pasando por " + \
-                        self.d_user + " y se dirige hacia " + destinatary
-                    self.make_message(
-                        mto=self.node.compute_username(message_json["from"]).lower(), mbody=json.dumps({"message": message}), mtype="chat").send()
-
-                    self.make_message(mto=self.node.compute_username(destinatary).lower(),
-                                      mbody=msg["body"],
-                                      mtype='chat').send()
             else:
                 print("\n")
                 print("Imprimamos", message_json["message"])
