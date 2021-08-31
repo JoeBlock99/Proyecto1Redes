@@ -1,5 +1,4 @@
 from constants import XMPP_DOMAIN
-from node import Node, build_prod_nodes
 from helpers import index_of_list, required_input
 import logging
 import json
@@ -11,6 +10,7 @@ import threading
 import sys
 import ssl
 from threading import Thread
+from dijstra import nextNode, recipients
 
 
 class Client(slixmpp.ClientXMPP):
@@ -20,10 +20,9 @@ class Client(slixmpp.ClientXMPP):
     and then log out.
     """
 
-    def __init__(self, user, password, nodes_dict):
+    def __init__(self, user, password):
         slixmpp.ClientXMPP.__init__(self, user, password)
         signal.signal(signal.SIGINT, self.signal_handler)
-        self.nodes_dict = nodes_dict
         self.user = user
         p = user.find("@")
         if p > -1:
@@ -31,22 +30,31 @@ class Client(slixmpp.ClientXMPP):
         else:
             self.d_user = user
 
-        self.node = self.nodes_dict[self.d_user]
         self.password = password
         self.started = 0
         # self.add_event_handler("presence_subscribe", self.presence_subscribed)
         self.add_event_handler("session_start", self.start)
         self.add_event_handler("register", self.register)  # flag de register
         self.add_event_handler('message', self.message)
+        self.register_plugin('xep_0004')  # Data forms
+        self.register_plugin('xep_0066')  # Out-of-band Data
+        self.register_plugin('xep_0077')
+        self.register_plugin('xep_0030')  # Service Discovery
+        self.register_plugin('xep_0199')  # XMPP Ping
+        self.register_plugin('xep_0092')
+        self.register_plugin('xep_0363')
+        self.register_plugin('xep_0085')
         # self.send_tables()
 
     @property
     def recipents(self):
         recipents_array = []
-        for n in self.nodes_dict:
-            if n != self.d_user:
-                recipents_array.append(n)
+        for n in recipients(self.d_user):
+            recipents_array.append(n)
         return recipents_array
+
+    def compute_username(self, name):
+        return name.lower() + "@" + XMPP_DOMAIN
 
     def presence_subscribed(self, new_presence):
         item = self.roster[new_presence['to']][new_presence['from']]
@@ -72,67 +80,27 @@ class Client(slixmpp.ClientXMPP):
                     print("Se recibe mensaje de: ", message_json["from"])
                     print(message_json["message"])
                 else:
-                    destinatary = self.node.get_next_node(message_json["to"])
+                    destinatary = nextNode(self.d_user, message_json["to"]) # self.node.get_next_node(message_json["to"])
                     if destinatary is None:
                         destinatary = message_json["to"]
 
                     message = "El mensaje que esta pensado llegar a: " + \
                         message_json["to"] + " esta pasando por " + \
                         self.d_user + " y se dirige hacia " + destinatary
-                    self.make_message(
-                        mto=self.node.compute_username(message_json["from"]).lower(), mbody=json.dumps({"message": message}), mtype="chat").send()
+                    print(message)
+                    self.make_message(mto=self.compute_username(message_json["from"]).lower(), mbody=json.dumps({"message": message}), mtype="chat").send()
 
-                    self.make_message(mto=self.node.compute_username(destinatary).lower(),
+                    self.make_message(mto=self.compute_username(destinatary).lower(),
                                       mbody=msg["body"],
                                       mtype='chat').send()
             else:
                 print("Imprimamos", message_json["message"])
 
-        elif msg["type"] == "normal":
-            message_json = json.loads(msg["body"])
-            type = message_json["type"]
-            if type == "table":
-                payload = message_json
-                self.node.recieve_from_adyacent(payload)
-
-            elif message_json["type"] == "update":
-                print("Actualización de ruta: ")
-                print(message_json["body"])
-            else:
-                print(message_json["body"])
         self.get_roster()
-
-    def send_tables(self):
-        all_valid = False
-
-        while(not all_valid):
-            all_valid_holder = True
-
-            payload = self.node.create_destinations_payload()
-            payload["type"] = "table"
-            adyacents = self.node.adyacents
-            for adyacent in adyacents:
-                to = self.node.compute_username(adyacent["node"]).lower()
-                serialized_payload = json.dumps(payload)
-                self.make_message(mto=to,
-                                  mbody=serialized_payload,
-                                  mtype='normal',
-                                  mfrom=self.boundjid.bare
-                                  ).send()
-                # self.recieve_messages()
-                # await self.waiting_queue.join()
-            all_valid = self.node.is_ready and all_valid_holder
-            time.sleep(3)
-            # print(self.node.table)
-            self.node.counter += 1
-
-    def send_presence_subscriptions(self):
-        for node in self.nodes_dict:
-            self.send_presence_subscription(
-                pto=node, pfrom=self.user)
 
     async def start(self, event):
         self.send_presence()
+        print("conectado")
         while True:
             try:
                 # Ask for roster
@@ -141,6 +109,7 @@ class Client(slixmpp.ClientXMPP):
             except:
                 self.started = -1
                 self.disconnect()
+                print("todo mal")
             # await self.get_roster()
 
     async def register(self, iq):
@@ -152,13 +121,13 @@ class Client(slixmpp.ClientXMPP):
         logging.info("Account created for %s!" % self.boundjid)
 
     # 1 to 1 message
-    def sendTableMessage(self, to, message):
+    '''def sendTableMessage(self, to, message):
 
         self.make_message(mto=to,
                           mbody=message,
                           mtype='normal',
                           mfrom=self.boundjid.bare
-                          ).send()
+                          ).send()'''
 
     # 1 to 1 message
 

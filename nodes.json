@@ -1,23 +1,23 @@
 [
     {
-        "name": "user1",
+        "name": "sebas1",
         "adyacents": {
-            "user2": 1,
-            "user3": 5
+            "sebas2": 1,
+            "sebas3": 5
         }
     },
     {
-        "name": "user2",
+        "name": "sebas2",
         "adyacents": {
-            "user1": 1,
-            "user3": 3
+            "sebas1": 1,
+            "sebas3": 3
         }
     },
     {
-        "name": "user3",
+        "name": "sebas3",
         "adyacents": {
-            "user1": 5,
-            "user2": 3
+            "sebas1": 5,
+            "sebas2": 3
         }
     }
 ]
